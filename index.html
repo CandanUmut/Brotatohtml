@@ -2,12 +2,11 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <title>Nova Arena · Mini Survivor</title>
+  <title>Nova Arena · Rogue Survivor</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
       --bg: #020617;
-      --bg-soft: #020617;
       --accent: #38bdf8;
       --accent-2: #22c55e;
       --accent-3: #f97316;
@@ -49,10 +48,7 @@
       inset: 0;
       width: 100vw;
       height: 100vh;
-      border-radius: 0;
       overflow: hidden;
-      border: none;
-      box-shadow: none;
       background: radial-gradient(circle at top, #020617 0, #000 75%);
     }
 
@@ -160,18 +156,18 @@
       pointer-events: none;
     }
 
-    #bottom-right-hints {
+    #top-left-hints {
       position: absolute;
-      right: 8px;
-      bottom: 8px;
+      left: 8px;
+      top: 56px;
       display: flex;
       flex-direction: column;
-      align-items: flex-end;
-      gap: 4px;
+      align-items: flex-start;
+      gap: 2px;
       pointer-events: none;
       font-size: 11px;
       color: var(--text-soft);
-      text-align: right;
+      text-align: left;
     }
 
     /* Overlays */
@@ -479,17 +475,12 @@
         bottom: 78px; /* joystick ile çakışmasın */
       }
 
-      #bottom-right-hints {
-        display: none;
-      }
-
       .hud-pill {
         padding: 3px 8px;
       }
     }
 
     @media (pointer: coarse) {
-      /* dokunmatik cihazlarda biraz daha büyük joystick */
       #joystick-container {
         width: 140px;
         height: 140px;
@@ -546,17 +537,17 @@
         </div>
       </div>
 
+      <div id="top-left-hints">
+        <div>PC: WASD → hareket, P → durdur/devam</div>
+        <div>Mobil: Sol alttaki joystick ile hareket</div>
+        <div>Seviye alınca upgrade kartı seç</div>
+      </div>
+
       <div id="xp-bar-wrapper">
         <div id="xp-bar-inner">
           <div id="xp-fill"></div>
           <div id="xp-label">XP 0 / 10</div>
         </div>
-      </div>
-
-      <div id="bottom-right-hints">
-        <div>WASD → Hareket</div>
-        <div>Seviye: otomatik upgrade ekranı</div>
-        <div>P → Pause</div>
       </div>
 
       <!-- Start -->
@@ -566,22 +557,20 @@
             <div class="start-logo-dot"></div>
             <div>
               <div class="overlay-title">Nova Arena</div>
-              <div class="start-tagline">PC + Mobil mini survivor oyunu.</div>
+              <div class="start-tagline">
+                Sonsuz dünyanın içinde gezinen mini rogue-survivor.
+              </div>
             </div>
           </div>
           <p class="overlay-sub">
-            Sonsuz düşman dalgalarıyla küçük bir arenada hayatta kal. Seviye atla, rastgele
-            upgrade seç, build’ini güçlendir. Mobilde sol alttaki joystick ile hareket edebilirsin.
+            Artık sabit arenada sıkışmadın: Farklı bölgelere yürü, yeni biyomlar ve engeller keşfet.
+            Düşmanların davranışları, bölgelere göre değişiyor. Seviye atladıkça build’ini kur,
+            hatta çift atışlı silahlar aç.
           </p>
           <div class="start-controls">
-            <div><strong>PC Kontrol:</strong></div>
-            <div>• <code>W A S D</code> → Hareket</div>
-            <div>• Otomatik nişan + otomatik ateş (en yakın düşman)</div>
-            <div>• <code>P</code> → Pause</div>
-            <br/>
-            <div><strong>Mobil Kontrol:</strong></div>
-            <div>• Sol alttaki daire → Joystick ile hareket</div>
-            <div>• Ateş yine otomatik</div>
+            <div><strong>PC:</strong> <code>W A S D</code> → Hareket, <code>P</code> → Duraklat</div>
+            <div><strong>Mobil:</strong> Sol alttaki joystick ile hareket</div>
+            <div>Nișan + ateș otomatik, en yakın düşmana.</div>
           </div>
           <div class="overlay-actions">
             <button id="btn-start" class="btn btn-primary">▶ Oyunu Başlat</button>
@@ -594,8 +583,7 @@
         <div class="overlay-card">
           <div class="overlay-title">Seviye Atladın!</div>
           <p class="overlay-sub">
-            Aşağıdaki geliştirmelerden birini seç. Build’in her seferinde farklı olabilir;
-            denemekten çekinme.
+            Aşağıdaki geliştirmelerden birini seç. Farklı run’larda farklı kombinasyonlarla oyna.
           </p>
           <div id="levelup-cards"></div>
         </div>
@@ -606,7 +594,7 @@
         <div class="overlay-card">
           <div class="overlay-title">Oyun Bitti</div>
           <p class="overlay-sub" id="gameover-text">
-            Güzel deneme! Build’ini güçlendirip tekrar dene.
+            Güzel deneme! Farklı bölgelere girip yeni build’lerle tekrar dene.
           </p>
           <div class="gameover-stats">
             <div class="gameover-stats-row">
@@ -654,10 +642,28 @@
       const dpr = window.devicePixelRatio || 1;
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // CSS pixel koordinatı için
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
+
+    function getScreenRect() {
+      return canvas.getBoundingClientRect();
+    }
+
+    // Dünya boyutu (büyük ama sonlu bir alan)
+    const WORLD = { width: 3600, height: 3600 };
+    const WORLD_HALF_W = WORLD.width / 2;
+    const WORLD_HALF_H = WORLD.height / 2;
+
+    const camera = { x: 0, y: 0 };
+
+    function worldToScreen(wx, wy) {
+      const rect = getScreenRect();
+      const sx = wx - camera.x + rect.width / 2;
+      const sy = wy - camera.y + rect.height / 2;
+      return { x: sx, y: sy };
+    }
 
     // ========= OYUN DURUMU =========
     const GAME_STATE = {
@@ -671,6 +677,7 @@
     let gameState = GAME_STATE.START;
 
     const keys = { w: false, a: false, s: false, d: false };
+
     window.addEventListener("keydown", (e) => {
       if (e.key === "w" || e.key === "W") keys.w = true;
       if (e.key === "a" || e.key === "A") keys.a = true;
@@ -735,7 +742,7 @@
       const dx = pos.x - joystickCenter.x;
       const dy = pos.y - joystickCenter.y;
       const maxDist = joystickBase.clientWidth / 2 - 10;
-      const dist = Math.sqrt(dx * dx + dy * dy);
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
       let nx = dx;
       let ny = dy;
       if (dist > maxDist) {
@@ -743,9 +750,9 @@
         nx *= ratio;
         ny *= ratio;
       }
-      joystickKnob.style.transform = `translate(${nx}px, ${ny}px) translate(-50%, -50%)`;
+      joystickKnob.style.transform =
+        `translate(${nx}px, ${ny}px) translate(-50%, -50%)`;
 
-      // normalize -1..1
       const normX = nx / maxDist;
       const normY = ny / maxDist;
       joystickVector.x = normX;
@@ -785,12 +792,14 @@
       bulletSpeed: 420,
       bulletSize: 5,
       bulletPierce: 0,
-      pickupRadius: 60
+      pickupRadius: 70,
+      weaponMode: "single" // "single" | "twin"
     };
 
     const bullets = [];
     const enemies = [];
     const xpOrbs = [];
+    const obstacles = [];
 
     let enemySpawnTimer = 0;
     let enemySpawnInterval = 1.4;
@@ -846,8 +855,19 @@
       });
     });
 
-    // ========= UPGRADE SİSTEMİ =========
+    // ========= BİYOM SİSTEMİ =========
+    function getBiome(x, y) {
+      const ax = Math.abs(x);
+      const ay = Math.abs(y);
+      if (ax < 600 && ay < 600) return "plaza";      // orta bölge
+      if (y < -800) return "frost";                 // yukarı: buz
+      if (y > 800) return "lava";                   // aşağı: lav
+      if (x > 800) return "desert";                 // sağ: çöl
+      if (x < -800) return "forest";                // sol: orman
+      return "field";
+    }
 
+    // ========= UPGRADE SİSTEMİ =========
     const UPGRADE_POOL = [
       {
         id: "dmg1",
@@ -859,8 +879,8 @@
       {
         id: "dmg2",
         title: "Hasar II",
-        desc: "+%35 mermi hasarı.",
-        apply: () => { player.damage *= 1.35; },
+        desc: "+%30 mermi hasarı.",
+        apply: () => { player.damage *= 1.3; },
         tags: ["Saldırı", "Hasar"]
       },
       {
@@ -873,8 +893,8 @@
       {
         id: "firerate2",
         title: "Ateş Hızı II",
-        desc: "+%35 atış hızı.",
-        apply: () => { player.fireRate *= 1.35; },
+        desc: "+%30 atış hızı.",
+        apply: () => { player.fireRate *= 1.3; },
         tags: ["Saldırı", "Hız"]
       },
       {
@@ -918,6 +938,16 @@
         desc: "Mermiler +1 düşman daha delip geçebilir.",
         apply: () => { player.bulletPierce += 1; },
         tags: ["Saldırı", "AOE"]
+      },
+      {
+        id: "twinShot",
+        title: "Çift Atış",
+        desc: "Her atışta 2 mermi hafif açıyla çıkar. Hasar biraz düşer.",
+        apply: () => {
+          player.weaponMode = "twin";
+          player.damage *= 0.9;
+        },
+        tags: ["Saldırı", "Silah"]
       }
     ];
 
@@ -967,7 +997,6 @@
     }
 
     // ========= YARDIMCI FONKSİYONLAR =========
-
     function clamp(v, min, max) {
       return v < min ? min : v > max ? max : v;
     }
@@ -981,6 +1010,12 @@
       return { x: x / len, y: y / len };
     }
 
+    function rotateVec(x, y, angle) {
+      const c = Math.cos(angle);
+      const s = Math.sin(angle);
+      return { x: x * c - y * s, y: x * s + y * c };
+    }
+
     function formatTime(t) {
       const total = Math.floor(t);
       const m = Math.floor(total / 60);
@@ -988,17 +1023,39 @@
       return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
     }
 
-    function rectCenter() {
-      const rect = canvas.getBoundingClientRect();
-      return { x: rect.width / 2, y: rect.height / 2 };
+    // Basit çarpışma çözümü: dairesel engeller
+    function resolveCircleObstacleCollision(obj, radius) {
+      for (const o of obstacles) {
+        const dx = obj.x - o.x;
+        const dy = obj.y - o.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const minDist = radius + o.radius;
+        if (dist > 0 && dist < minDist) {
+          const overlap = minDist - dist;
+          const n = { x: dx / dist, y: dy / dist };
+          obj.x += n.x * overlap;
+          obj.y += n.y * overlap;
+        }
+      }
+    }
+
+    // ========= OBSTACLE OLUŞTURMA =========
+    function generateObstacles() {
+      obstacles.length = 0;
+      const count = 80;
+      for (let i = 0; i < count; i++) {
+        const x = (Math.random() - 0.5) * WORLD.width * 0.9;
+        const y = (Math.random() - 0.5) * WORLD.height * 0.9;
+        const radius = 30 + Math.random() * 40;
+        const type = Math.floor(Math.random() * 3); // 0: kaya, 1: sütun, 2: kristal
+        obstacles.push({ x, y, radius, type });
+      }
     }
 
     // ========= OYUN BAŞLATMA / SIFIRLAMA =========
-
     function resetGameState() {
-      const center = rectCenter();
-      player.x = center.x;
-      player.y = center.y;
+      player.x = 0;
+      player.y = 0;
       player.radius = 16;
       player.speed = 220;
       player.maxHp = 100;
@@ -1009,7 +1066,8 @@
       player.bulletSpeed = 420;
       player.bulletSize = 5;
       player.bulletPierce = 0;
-      player.pickupRadius = 60;
+      player.pickupRadius = 70;
+      player.weaponMode = "single";
 
       bullets.length = 0;
       enemies.length = 0;
@@ -1027,6 +1085,11 @@
       joystickVector.x = 0;
       joystickVector.y = 0;
       joystickKnob.style.transform = "translate(-50%, -50%)";
+
+      camera.x = player.x;
+      camera.y = player.y;
+
+      generateObstacles();
     }
 
     function startNewGame() {
@@ -1049,46 +1112,66 @@
     }
 
     // ========= ENEMY SPAWN =========
-
     function spawnEnemy() {
-      const rect = canvas.getBoundingClientRect();
-      const margin = 60;
-      const side = Math.floor(Math.random() * 4);
-      let x, y;
-      if (side === 0) {
-        x = Math.random() * rect.width;
-        y = -margin;
-      } else if (side === 1) {
-        x = Math.random() * rect.width;
-        y = rect.height + margin;
-      } else if (side === 2) {
-        x = -margin;
-        y = Math.random() * rect.height;
-      } else {
-        x = rect.width + margin;
-        y = Math.random() * rect.height;
-      }
+      // Oyuncunun etrafında bir halka üzerinde spawn
+      const angle = Math.random() * Math.PI * 2;
+      const minDist = 400;
+      const maxDist = 800;
+      const dist = minDist + Math.random() * (maxDist - minDist);
 
-      // Zaman ilerledikçe düşman buff
-      const difficulty = 1 + timeElapsed / 60;
-      const baseSpeed = 60 + Math.random() * 40;
-      const baseHp = 35 + Math.random() * 15;
+      let x = player.x + Math.cos(angle) * dist;
+      let y = player.y + Math.sin(angle) * dist;
+
+      x = clamp(x, -WORLD_HALF_W + 40, WORLD_HALF_W - 40);
+      y = clamp(y, -WORLD_HALF_H + 40, WORLD_HALF_H - 40);
+
+      const biome = getBiome(x, y);
+      const difficultyTime = timeElapsed;
+
+      // scaling daha makul: hız ve HP yavaş artıyor
+      const baseSpeed = 70 + Math.random() * 40;
+      const baseHp = 30 + Math.random() * 20;
+      const speedScale = 1 + difficultyTime / 180;
+      const hpScale = 1 + difficultyTime / 120;
+
+      // biyoma göre tip & biraz bonus
+      let type; // davranış + şekil
+      switch (biome) {
+        case "plaza":
+          type = Math.random() < 0.5 ? 0 : 1;
+          break;
+        case "forest":
+          type = Math.random() < 0.5 ? 0 : 3;
+          break;
+        case "desert":
+          type = 1; // charger
+          break;
+        case "frost":
+          type = Math.random() < 0.7 ? 2 : 0; // orbit
+          break;
+        case "lava":
+          type = Math.random() < 0.7 ? 3 : 1; // zigzag / hızlı
+          break;
+        default:
+          type = Math.floor(Math.random() * 4);
+      }
 
       enemies.push({
         x,
         y,
         radius: 16,
-        speed: baseSpeed * difficulty,
-        hp: baseHp * difficulty,
-        maxHp: baseHp * difficulty,
-        damage: 10 * difficulty,
-        knockback: 200,
-        type: Math.floor(Math.random() * 4) // 0: daire, 1: kare, 2: üçgen, 3: altıgen
+        speed: baseSpeed * speedScale,
+        baseSpeed: baseSpeed,
+        hp: baseHp * hpScale,
+        maxHp: baseHp * hpScale,
+        damage: 7 * (1 + difficultyTime / 150),
+        knockback: 220,
+        type,                    // 0: normal, 1: charger, 2: orbit, 3: zigzag
+        phase: Math.random() * Math.PI * 2
       });
     }
 
     // ========= GÜNCELLEME =========
-
     function updatePlayer(dt) {
       let dx = 0;
       let dy = 0;
@@ -1099,7 +1182,7 @@
       if (keys.a) dx -= 1;
       if (keys.d) dx += 1;
 
-      // Joystick (y ekseni ters)
+      // Joystick
       dx += joystickVector.x;
       dy += joystickVector.y;
 
@@ -1109,9 +1192,12 @@
         player.y += n.y * player.speed * dt;
       }
 
-      const rect = canvas.getBoundingClientRect();
-      player.x = clamp(player.x, 40, rect.width - 40);
-      player.y = clamp(player.y, 40, rect.height - 40);
+      // Dünya sınırları
+      player.x = clamp(player.x, -WORLD_HALF_W + 40, WORLD_HALF_W - 40);
+      player.y = clamp(player.y, -WORLD_HALF_H + 40, WORLD_HALF_H - 40);
+
+      // Engeller
+      resolveCircleObstacleCollision(player, player.radius);
 
       // Rejen
       if (player.regen > 0) {
@@ -1122,18 +1208,65 @@
     function updateEnemies(dt) {
       for (let i = enemies.length - 1; i >= 0; i--) {
         const e = enemies[i];
-        const dir = normalize(player.x - e.x, player.y - e.y);
-        e.x += dir.x * e.speed * dt;
-        e.y += dir.y * e.speed * dt;
+        const dx = player.x - e.x;
+        const dy = player.y - e.y;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        let dir = { x: dx / dist, y: dy / dist };
+
+        let vx = dir.x;
+        let vy = dir.y;
+
+        // Davranışlara göre hareket
+        switch (e.type) {
+          case 1: { // charger
+            const boost = dist < 260 ? 2.2 : 1.0;
+            vx *= boost;
+            vy *= boost;
+            break;
+          }
+          case 2: { // orbit
+            const perp = { x: -dir.y, y: dir.x };
+            vx = dir.x * 0.6 + perp.x * 0.8;
+            vy = dir.y * 0.6 + perp.y * 0.8;
+            const n = normalize(vx, vy);
+            vx = n.x;
+            vy = n.y;
+            break;
+          }
+          case 3: { // zigzag
+            const perp2 = { x: -dir.y, y: dir.x };
+            const wave = Math.sin((timeElapsed + e.phase) * 3);
+            vx = dir.x + perp2.x * 0.7 * wave;
+            vy = dir.y + perp2.y * 0.7 * wave;
+            const n2 = normalize(vx, vy);
+            vx = n2.x;
+            vy = n2.y;
+            break;
+          }
+          default: // normal
+            break;
+        }
+
+        e.x += vx * e.speed * dt;
+        e.y += vy * e.speed * dt;
+
+        // Dünya sınırları
+        e.x = clamp(e.x, -WORLD_HALF_W + 30, WORLD_HALF_W - 30);
+        e.y = clamp(e.y, -WORLD_HALF_H + 30, WORLD_HALF_H - 30);
+
+        // Engeller
+        resolveCircleObstacleCollision(e, e.radius);
 
         // Player çarpışma
-        const dist = length(player.x - e.x, player.y - e.y);
-        if (dist < player.radius + e.radius) {
-          player.hp -= e.damage * dt; // saniye başına hasar
-          // hafif itme
+        const distToPlayer = Math.sqrt(
+          (player.x - e.x) * (player.x - e.x) +
+          (player.y - e.y) * (player.y - e.y)
+        );
+        if (distToPlayer < player.radius + e.radius) {
+          player.hp -= e.damage * dt;
           const push = normalize(player.x - e.x, player.y - e.y);
-          player.x += push.x * e.knockback * dt * 0.2;
-          player.y += push.y * e.knockback * dt * 0.2;
+          player.x += push.x * e.knockback * dt * 0.25;
+          player.y += push.y * e.knockback * dt * 0.25;
 
           if (player.hp <= 0) {
             player.hp = 0;
@@ -1143,7 +1276,6 @@
         }
 
         if (e.hp <= 0) {
-          // XP orb
           xpOrbs.push({
             x: e.x,
             y: e.y,
@@ -1162,10 +1294,9 @@
         b.x += b.vx * dt;
         b.y += b.vy * dt;
 
-        const rect = canvas.getBoundingClientRect();
         if (
-          b.x < -40 || b.x > rect.width + 40 ||
-          b.y < -40 || b.y > rect.height + 40 ||
+          b.x < -WORLD_HALF_W - 60 || b.x > WORLD_HALF_W + 60 ||
+          b.y < -WORLD_HALF_H - 60 || b.y > WORLD_HALF_H + 60 ||
           b.life <= 0
         ) {
           bullets.splice(i, 1);
@@ -1220,11 +1351,51 @@
           if (xp >= xpNeeded) {
             level++;
             xp -= xpNeeded;
-            xpNeeded = Math.floor(10 + level * level * 1.5);
-            enemySpawnInterval = Math.max(0.35, enemySpawnInterval - 0.05);
+            xpNeeded = Math.floor(10 + level * level * 1.3);
+            enemySpawnInterval = Math.max(0.5, enemySpawnInterval - 0.04);
             showLevelup();
           }
         }
+      }
+    }
+
+    function fireBulletsTowards(dir) {
+      // Tek veya çift atış
+      if (player.weaponMode === "twin") {
+        const spread = 0.18;
+        const dir1 = rotateVec(dir.x, dir.y, -spread);
+        const dir2 = rotateVec(dir.x, dir.y, spread);
+
+        const b1 = {
+          x: player.x,
+          y: player.y,
+          radius: player.bulletSize,
+          vx: dir1.x * player.bulletSpeed,
+          vy: dir1.y * player.bulletSpeed,
+          life: 1.2,
+          pierced: 0
+        };
+        const b2 = {
+          x: player.x,
+          y: player.y,
+          radius: player.bulletSize,
+          vx: dir2.x * player.bulletSpeed,
+          vy: dir2.y * player.bulletSpeed,
+          life: 1.2,
+          pierced: 0
+        };
+        bullets.push(b1, b2);
+      } else {
+        const bullet = {
+          x: player.x,
+          y: player.y,
+          radius: player.bulletSize,
+          vx: dir.x * player.bulletSpeed,
+          vy: dir.y * player.bulletSpeed,
+          life: 1.2,
+          pierced: 0
+        };
+        bullets.push(bullet);
       }
     }
 
@@ -1233,7 +1404,6 @@
       if (bulletCooldown > 0) return;
       if (enemies.length === 0) return;
 
-      // En yakın düşmanı bul
       let nearest = null;
       let bestDist = Infinity;
       for (const e of enemies) {
@@ -1247,16 +1417,7 @@
       if (!nearest) return;
       const dir = normalize(nearest.x - player.x, nearest.y - player.y);
 
-      const bullet = {
-        x: player.x,
-        y: player.y,
-        radius: player.bulletSize,
-        vx: dir.x * player.bulletSpeed,
-        vy: dir.y * player.bulletSpeed,
-        life: 1.2,
-        pierced: 0
-      };
-      bullets.push(bullet);
+      fireBulletsTowards(dir);
 
       bulletCooldown = 1 / player.fireRate;
     }
@@ -1267,55 +1428,150 @@
       hudKills.textContent = killCount.toString();
       hudTime.textContent = formatTime(timeElapsed);
       xpFill.style.width = `${clamp((xp / xpNeeded) * 100, 0, 100)}%`;
-      xpLabel.textContent = `XP ${Math.floor(xp)} / ${xpNeeded}`;
+      xpLabel.textContent = `XP ${Math.floor(x)} / ${xpNeeded}`;
     }
 
     // ========= ÇİZİM =========
-
     function drawBackground() {
-      const rect = canvas.getBoundingClientRect();
-      // hafif grid
+      const rect = getScreenRect();
       ctx.save();
       ctx.fillStyle = "#020617";
       ctx.fillRect(0, 0, rect.width, rect.height);
 
+      // Biyom rengi
+      const biome = getBiome(player.x, player.y);
+      let tint;
+      switch (biome) {
+        case "plaza":
+          tint = "rgba(56,189,248,0.18)";
+          break;
+        case "forest":
+          tint = "rgba(34,197,94,0.18)";
+          break;
+        case "desert":
+          tint = "rgba(250,204,21,0.16)";
+          break;
+        case "frost":
+          tint = "rgba(59,130,246,0.18)";
+          break;
+        case "lava":
+          tint = "rgba(248,113,113,0.2)";
+          break;
+        default:
+          tint = "rgba(148,163,184,0.12)";
+      }
+
+      // Grid çizimi (kamera bazlı)
       ctx.globalAlpha = 0.18;
       ctx.strokeStyle = "#0f172a";
-      const step = 70;
-      for (let x = 0; x < rect.width; x += step) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, rect.height);
-        ctx.stroke();
-      }
-      for (let y = 0; y < rect.height; y += step) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(rect.width, y);
-        ctx.stroke();
-      }
-      ctx.restore();
+      const grid = 180;
+      const startX = Math.floor((camera.x - rect.width / 2) / grid) * grid;
+      const endX = Math.floor((camera.x + rect.width / 2) / grid) * grid;
+      const startY = Math.floor((camera.y - rect.height / 2) / grid) * grid;
+      const endY = Math.floor((camera.y + rect.height / 2) / grid) * grid;
 
-      // parlayan merkez
-      const center = rectCenter();
+      for (let gx = startX; gx <= endX; gx += grid) {
+        const sx = gx - camera.x + rect.width / 2;
+        ctx.beginPath();
+        ctx.moveTo(sx, 0);
+        ctx.lineTo(sx, rect.height);
+        ctx.stroke();
+      }
+      for (let gy = startY; gy <= endY; gy += grid) {
+        const sy = gy - camera.y + rect.height / 2;
+        ctx.beginPath();
+        ctx.moveTo(0, sy);
+        ctx.lineTo(rect.width, sy);
+        ctx.stroke();
+      }
+
+      ctx.globalAlpha = 1;
+
+      // Biyom tint
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
       const grad = ctx.createRadialGradient(
-        center.x,
-        center.y,
+        centerX,
+        centerY,
         0,
-        center.x,
-        center.y,
+        centerX,
+        centerY,
         Math.max(rect.width, rect.height)
       );
-      grad.addColorStop(0, "rgba(56,189,248,0.12)");
-      grad.addColorStop(0.4, "rgba(15,23,42,0)");
+      grad.addColorStop(0, tint);
       grad.addColorStop(1, "rgba(0,0,0,0)");
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, rect.width, rect.height);
+
+      ctx.restore();
+    }
+
+    function drawObstacles() {
+      ctx.save();
+      for (const o of obstacles) {
+        const s = worldToScreen(o.x, o.y);
+
+        // gölge
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = "#000";
+        ctx.beginPath();
+        ctx.ellipse(s.x + 4, s.y + o.radius * 0.7, o.radius, o.radius * 0.4, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+
+        let grad;
+        switch (o.type) {
+          case 0: // kaya
+            grad = ctx.createRadialGradient(
+              s.x - 6, s.y - 6, 4,
+              s.x, s.y, o.radius + 6
+            );
+            grad.addColorStop(0, "#e5e7eb");
+            grad.addColorStop(0.4, "#6b7280");
+            grad.addColorStop(1, "#020617");
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, o.radius, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+          case 1: // sütun
+            grad = ctx.createLinearGradient(s.x - o.radius, s.y - o.radius, s.x + o.radius, s.y + o.radius);
+            grad.addColorStop(0, "#f9fafb");
+            grad.addColorStop(0.4, "#9ca3af");
+            grad.addColorStop(1, "#020617");
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.moveTo(s.x - o.radius * 0.8, s.y - o.radius);
+            ctx.lineTo(s.x + o.radius * 0.8, s.y - o.radius);
+            ctx.lineTo(s.x + o.radius * 0.5, s.y + o.radius);
+            ctx.lineTo(s.x - o.radius * 0.5, s.y + o.radius);
+            ctx.closePath();
+            ctx.fill();
+            break;
+          case 2: // kristal
+          default:
+            grad = ctx.createLinearGradient(s.x, s.y - o.radius, s.x, s.y + o.radius);
+            grad.addColorStop(0, "#a5b4fc");
+            grad.addColorStop(0.5, "#6366f1");
+            grad.addColorStop(1, "#020617");
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.moveTo(s.x, s.y - o.radius);
+            ctx.lineTo(s.x + o.radius * 0.6, s.y);
+            ctx.lineTo(s.x, s.y + o.radius);
+            ctx.lineTo(s.x - o.radius * 0.6, s.y);
+            ctx.closePath();
+            ctx.fill();
+            break;
+        }
+      }
+      ctx.restore();
     }
 
     function drawPlayer() {
+      const s = worldToScreen(player.x, player.y);
       ctx.save();
-      ctx.translate(player.x, player.y);
+      ctx.translate(s.x, s.y);
 
       // dış halo
       const haloGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, player.radius * 2.4);
@@ -1326,9 +1582,7 @@
       ctx.arc(0, 0, player.radius * 2.4, 0, Math.PI * 2);
       ctx.fill();
 
-      // gövde - elmas / kapsül karışımı
-      ctx.save();
-      // hafif rotasyon: hareket yönüne göre
+      // hedefe göre yön
       let angle = 0;
       if (enemies.length > 0) {
         let nearest = enemies[0];
@@ -1345,7 +1599,7 @@
       ctx.rotate(angle);
 
       const w = player.radius * 1.6;
-      const h = player.radius * 2.2;
+      const h = player.radius * 2.3;
 
       const grad = ctx.createLinearGradient(-w / 2, -h / 2, w / 2, h / 2);
       grad.addColorStop(0, "#f9fafb");
@@ -1353,6 +1607,7 @@
       grad.addColorStop(0.8, "#0f172a");
       ctx.fillStyle = grad;
 
+      // Elmas/kapsül şekli
       ctx.beginPath();
       ctx.moveTo(0, -h / 2);
       ctx.lineTo(w / 2, 0);
@@ -1361,8 +1616,7 @@
       ctx.closePath();
       ctx.fill();
 
-      // iç çizgi
-      ctx.strokeStyle = "rgba(15,23,42,0.8)";
+      ctx.strokeStyle = "rgba(15,23,42,0.85)";
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(0, -h / 2 + 4);
@@ -1370,31 +1624,29 @@
       ctx.stroke();
 
       ctx.restore();
-
-      // yön oku zaten rotasyonla birlikte hissediliyor, ekstra ok koymaya gerek yok
-      ctx.restore();
     }
 
     function drawEnemies() {
       ctx.save();
       for (const e of enemies) {
+        const s = worldToScreen(e.x, e.y);
+
         // gölge
         ctx.globalAlpha = 0.25;
         ctx.fillStyle = "#000";
         ctx.beginPath();
-        ctx.ellipse(e.x + 4, e.y + e.radius, e.radius * 0.8, e.radius * 0.4, 0, 0, Math.PI * 2);
+        ctx.ellipse(s.x + 4, s.y + e.radius, e.radius * 0.9, e.radius * 0.4, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.globalAlpha = 1;
 
-        // farklı şekiller
         ctx.save();
-        ctx.translate(e.x, e.y);
+        ctx.translate(s.x, s.y);
 
         const r = e.radius;
         let fillGrad;
 
         switch (e.type) {
-          case 0: // daire - turuncu
+          case 0: // daire - turuncu normal
             fillGrad = ctx.createRadialGradient(-4, -4, 4, 0, 0, r + 4);
             fillGrad.addColorStop(0, "#fee2e2");
             fillGrad.addColorStop(0.4, "#f97316");
@@ -1404,26 +1656,26 @@
             ctx.arc(0, 0, r, 0, Math.PI * 2);
             ctx.fill();
             break;
-          case 1: // kare - morumsu
+          case 1: // kare - charger
             fillGrad = ctx.createLinearGradient(-r, -r, r, r);
-            fillGrad.addColorStop(0, "#f5d0fe");
-            fillGrad.addColorStop(0.4, "#a855f7");
+            fillGrad.addColorStop(0, "#fee2e2");
+            fillGrad.addColorStop(0.4, "#f97316");
             fillGrad.addColorStop(1, "#111827");
             ctx.fillStyle = fillGrad;
+            const s2 = r * 1.2;
             ctx.beginPath();
-            const s = r * 1.2;
-            ctx.moveTo(-s, -s);
-            ctx.lineTo(s, -s);
-            ctx.lineTo(s, s);
-            ctx.lineTo(-s, s);
+            ctx.moveTo(-s2, -s2);
+            ctx.lineTo(s2, -s2);
+            ctx.lineTo(s2, s2);
+            ctx.lineTo(-s2, s2);
             ctx.closePath();
             ctx.fill();
             break;
-          case 2: // üçgen - kırmızımsı
+          case 2: // üçgen - orbit
             fillGrad = ctx.createLinearGradient(-r, -r, r, r);
-            fillGrad.addColorStop(0, "#fecaca");
-            fillGrad.addColorStop(0.4, "#ef4444");
-            fillGrad.addColorStop(1, "#111827");
+            fillGrad.addColorStop(0, "#e0f2fe");
+            fillGrad.addColorStop(0.4, "#3b82f6");
+            fillGrad.addColorStop(1, "#020617");
             ctx.fillStyle = fillGrad;
             ctx.beginPath();
             ctx.moveTo(0, -r * 1.4);
@@ -1432,12 +1684,12 @@
             ctx.closePath();
             ctx.fill();
             break;
-          case 3: // altıgen - yeşil
+          case 3: // altıgen - zigzag
           default:
             fillGrad = ctx.createLinearGradient(-r, 0, r, 0);
             fillGrad.addColorStop(0, "#bbf7d0");
             fillGrad.addColorStop(0.4, "#22c55e");
-            fillGrad.addColorStop(1, "#111827");
+            fillGrad.addColorStop(1, "#020617");
             ctx.fillStyle = fillGrad;
             ctx.beginPath();
             const sides = 6;
@@ -1460,9 +1712,9 @@
         const barW = e.radius * 1.6;
         const barH = 4;
         ctx.fillStyle = "rgba(15,23,42,0.9)";
-        ctx.fillRect(e.x - barW / 2, e.y - e.radius - 8, barW, barH);
+        ctx.fillRect(s.x - barW / 2, s.y - e.radius - 8, barW, barH);
         ctx.fillStyle = "#22c55e";
-        ctx.fillRect(e.x - barW / 2, e.y - e.radius - 8, barW * ratio, barH);
+        ctx.fillRect(s.x - barW / 2, s.y - e.radius - 8, barW * ratio, barH);
       }
       ctx.restore();
     }
@@ -1470,18 +1722,19 @@
     function drawBullets() {
       ctx.save();
       for (const b of bullets) {
-        const grad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.radius * 2.3);
+        const s = worldToScreen(b.x, b.y);
+        const grad = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, b.radius * 2.3);
         grad.addColorStop(0, "#fef9c3");
         grad.addColorStop(0.3, "#eab308");
         grad.addColorStop(1, "rgba(0,0,0,0)");
         ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.arc(b.x, b.y, b.radius * 2.3, 0, Math.PI * 2);
+        ctx.arc(s.x, s.y, b.radius * 2.3, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.fillStyle = "#facc15";
         ctx.beginPath();
-        ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+        ctx.arc(s.x, s.y, b.radius, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.restore();
@@ -1490,25 +1743,25 @@
     function drawXpOrbs() {
       ctx.save();
       for (const orb of xpOrbs) {
-        const grad = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, orb.radius * 2.4);
+        const s = worldToScreen(orb.x, orb.y);
+        const grad = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, orb.radius * 2.4);
         grad.addColorStop(0, "#bbf7d0");
         grad.addColorStop(0.4, "#22c55e");
         grad.addColorStop(1, "rgba(0,0,0,0)");
         ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.arc(orb.x, orb.y, orb.radius * 2.4, 0, Math.PI * 2);
+        ctx.arc(s.x, s.y, orb.radius * 2.4, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.fillStyle = "#4ade80";
         ctx.beginPath();
-        ctx.arc(orb.x, orb.y, orb.radius, 0, Math.PI * 2);
+        ctx.arc(s.x, s.y, orb.radius, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.restore();
     }
 
     // ========= GAME LOOP =========
-
     let lastTime = 0;
 
     function gameLoop(timestamp) {
@@ -1531,8 +1784,12 @@
       autoShoot(dt);
       updateHud();
 
-      // Çizim
+      // Kamera oyuncuyu takip etsin
+      camera.x = player.x;
+      camera.y = player.y;
+
       drawBackground();
+      drawObstacles();
       drawXpOrbs();
       drawEnemies();
       drawBullets();
@@ -1543,7 +1800,7 @@
       }
     }
 
-    // başlangıçta sadece start ekranı
+    // Başlangıçta sadece start ekranı görünüyor; oyun startNewGame ile başlıyor.
   </script>
 </body>
 </html>
