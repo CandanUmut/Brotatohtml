@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Nova Arena · Mini Survivor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #020617;
+      --bg-soft: #020617;
+      --accent: #38bdf8;
+      --accent-2: #22c55e;
+      --accent-3: #f97316;
+      --danger: #ef4444;
+      --text: #e5e7eb;
+      --text-soft: #9ca3af;
+      --panel: rgba(15, 23, 42, 0.92);
+      --border: #1f2937;
+      --radius-lg: 18px;
+      --shadow-soft: 0 20px 50px rgba(0, 0, 0, 0.8);
+      --transition-fast: 0.16s ease-out;
+      --transition-med: 0.25s ease-out;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: radial-gradient(circle at top, #020617 0, #000 60%);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 12px;
+    }
+
+    #game-root {
+      width: 100%;
+      max-width: 1100px;
+      aspect-ratio: 16/9;
+      position: relative;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      box-shadow: var(--shadow-soft);
+      background: radial-gradient(circle at top, #020617 0, #000 65%);
+    }
+
+    #game-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: radial-gradient(circle at center, #020617 0, #000 75%);
+      image-rendering: pixelated;
+    }
+
+    #ui-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    /* HUD */
+
+    #hud-top {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      right: 8px;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .hud-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .hud-pill {
+      background: rgba(15, 23, 42, 0.95);
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      backdrop-filter: blur(12px);
+      padding: 4px 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      pointer-events: auto;
+    }
+
+    .hud-label {
+      color: var(--text-soft);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .hud-value {
+      font-weight: 600;
+    }
+
+    #xp-bar-wrapper {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 10px;
+      width: min(60%, 580px);
+      background: rgba(15, 23, 42, 0.95);
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      overflow: hidden;
+      pointer-events: auto;
+    }
+
+    #xp-bar-inner {
+      position: relative;
+      height: 14px;
+      width: 100%;
+      background: radial-gradient(circle at top, #020617 0, #020617 60%);
+    }
+
+    #xp-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 16px rgba(34, 197, 94, 0.9);
+      transition: width 0.15s linear;
+    }
+
+    #xp-label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: #e5e7eb;
+      text-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
+      pointer-events: none;
+    }
+
+    #bottom-right-hints {
+      position: absolute;
+      right: 8px;
+      bottom: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      pointer-events: none;
+      font-size: 11px;
+      color: var(--text-soft);
+    }
+
+    /* Overlays */
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .overlay-visible {
+      pointer-events: auto;
+    }
+
+    .overlay-card {
+      min-width: min(400px, 90%);
+      max-width: 520px;
+      background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.08), rgba(15, 23, 42, 0.96));
+      border-radius: 20px;
+      border: 1px solid rgba(148, 163, 184, 0.8);
+      box-shadow: var(--shadow-soft);
+      padding: 16px 18px 14px;
+      transform: translateY(14px) scale(0.97);
+      opacity: 0;
+      transition: opacity var(--transition-med), transform var(--transition-med);
+    }
+
+    .overlay-visible .overlay-card {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .overlay-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 0 4px;
+      color: #f9fafb;
+    }
+
+    .overlay-sub {
+      margin: 0 0 10px;
+      font-size: 13px;
+      color: var(--text-soft);
+    }
+
+    .overlay-actions {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    button {
+      font-family: inherit;
+    }
+
+    .btn {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      background: rgba(15, 23, 42, 0.95);
+      padding: 6px 12px;
+      font-size: 13px;
+      color: #e5e7eb;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: background var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+    }
+
+    .btn:hover {
+      background: rgba(15, 23, 42, 1);
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(15, 23, 42, 0.9);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #022c22;
+      border-color: transparent;
+      font-weight: 600;
+      box-shadow: 0 10px 24px rgba(34, 197, 94, 0.9);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 12px 30px rgba(34, 197, 94, 1);
+    }
+
+    .btn-ghost-danger {
+      border-color: rgba(248, 113, 113, 0.7);
+      color: #fecaca;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 3px 8px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      font-size: 11px;
+      color: var(--text-soft);
+      background: rgba(15, 23, 42, 0.95);
+    }
+
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.9);
+    }
+
+    /* Start Screen */
+
+    #start-overlay {
+      z-index: 10;
+    }
+
+    #start-overlay .overlay-card {
+      text-align: left;
+    }
+
+    .start-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .start-logo-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 18px rgba(56, 189, 248, 0.9);
+    }
+
+    .start-tagline {
+      font-size: 12px;
+      color: var(--text-soft);
+      margin-top: 2px;
+    }
+
+    .start-controls {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--text-soft);
+    }
+
+    .start-controls code {
+      background: rgba(15, 23, 42, 0.9);
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      font-size: 11px;
+    }
+
+    /* Level Up */
+
+    #levelup-overlay {
+      z-index: 20;
+    }
+
+    #levelup-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .upgrade-card {
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.96));
+      padding: 8px 9px 7px;
+      cursor: pointer;
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+      min-height: 86px;
+    }
+
+    .upgrade-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.9);
+      border-color: var(--accent);
+      background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.22), rgba(15, 23, 42, 0.98));
+    }
+
+    .upgrade-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .upgrade-badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+
+    .upgrade-desc {
+      font-size: 12px;
+      color: var(--text-soft);
+    }
+
+    /* Game Over */
+
+    #gameover-overlay {
+      z-index: 30;
+    }
+
+    .gameover-stats {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--text-soft);
+    }
+
+    .gameover-stats-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 3px;
+    }
+
+    /* Small Screens */
+
+    @media (max-width: 720px) {
+      #game-root {
+        border-radius: 0;
+      }
+
+      .overlay-card {
+        border-radius: 18px;
+      }
+
+      .hud-pill {
+        padding: 3px 8px;
+      }
+
+      #xp-bar-wrapper {
+        width: 90%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="game-root">
+    <canvas id="game-canvas"></canvas>
+
+    <div id="ui-layer">
+      <!-- HUD -->
+      <div id="hud-top">
+        <div class="hud-group">
+          <div class="hud-pill">
+            <span class="hud-label">HP</span>
+            <span class="hud-value" id="hud-hp">100 / 100</span>
+          </div>
+          <div class="hud-pill">
+            <span class="hud-label">LEVEL</span>
+            <span class="hud-value" id="hud-level">1</span>
+          </div>
+          <div class="hud-pill">
+            <span class="hud-label">KILLS</span>
+            <span class="hud-value" id="hud-kills">0</span>
+          </div>
+        </div>
+
+        <div class="hud-group">
+          <div class="hud-pill">
+            <span class="hud-label">TIME</span>
+            <span class="hud-value" id="hud-time">00:00</span>
+          </div>
+          <div class="hud-pill">
+            <span class="hud-label">BUILD</span>
+            <span class="hud-value" id="hud-build">Balanced</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="xp-bar-wrapper">
+        <div id="xp-bar-inner">
+          <div id="xp-fill"></div>
+          <div id="xp-label">XP 0 / 10</div>
+        </div>
+      </div>
+
+      <div id="bottom-right-hints">
+        <div>WASD → Hareket</div>
+        <div>Seviye: otomatik upgrade ekranı</div>
+        <div>P → Pause</div>
+      </div>
+
+      <!-- Start -->
+      <div id="start-overlay" class="overlay overlay-visible">
+        <div class="overlay-card">
+          <div class="start-title">
+            <div class="start-logo-dot"></div>
+            <div>
+              <div class="overlay-title">Nova Arena</div>
+              <div class="start-tagline">5–10 dakikalık mini Brotato / Survivor keyfi.</div>
+            </div>
+          </div>
+          <p class="overlay-sub">
+            Sonsuz düşman dalgalarıyla küçük bir arenada hayatta kal. Seviye atla, rastgele
+            upgrade seç, build’ini güçlendir. Ne kadar uzun dayanabilirsin?
+          </p>
+          <div class="start-controls">
+            <div><strong>Kontroller:</strong></div>
+            <div>• <code>W A S D</code> → Hareket</div>
+            <div>• Otomatik nişan + otomatik ateş (en yakın düşman)</div>
+            <div>• Seviye alınca upgrade kartlarından birini seç</div>
+          </div>
+          <div class="overlay-actions">
+            <button id="btn-start" class="btn btn-primary">▶ Oyunu Başlat</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Level Up -->
+      <div id="levelup-overlay" class="overlay" style="display:none;">
+        <div class="overlay-card">
+          <div class="overlay-title">Seviye Atladın!</div>
+          <p class="overlay-sub">
+            Aşağıdaki geliştirmelerden birini seç. Build’in her seferinde farklı olabilir;
+            denemekten çekinme.
+          </p>
+          <div id="levelup-cards"></div>
+        </div>
+      </div>
+
+      <!-- Game Over -->
+      <div id="gameover-overlay" class="overlay" style="display:none;">
+        <div class="overlay-card">
+          <div class="overlay-title">Oyun Bitti</div>
+          <p class="overlay-sub" id="gameover-text">
+            Güzel deneme! Build’ini güçlendirip tekrar dene.
+          </p>
+          <div class="gameover-stats">
+            <div class="gameover-stats-row">
+              <span>Toplam süre:</span>
+              <span id="stat-time">00:00</span>
+            </div>
+            <div class="gameover-stats-row">
+              <span>Öldürülen düşman:</span>
+              <span id="stat-kills">0</span>
+            </div>
+            <div class="gameover-stats-row">
+              <span>En yüksek seviye:</span>
+              <span id="stat-level">1</span>
+            </div>
+          </div>
+          <div class="overlay-actions">
+            <button id="btn-restart" class="btn btn-primary">↻ Tekrar Oyna</button>
+            <button id="btn-quit" class="btn btn-ghost-danger">⏻ Kapat / Dinlen</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ========= KANVAS & TEMEL AYAR =========
+    const canvas = document.getElementById("game-canvas");
+    const ctx = canvas.getContext("2d");
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // CSS pixel koordinatı için
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    // ========= OYUN DURUMU =========
+    const GAME_STATE = {
+      START: "start",
+      PLAYING: "playing",
+      LEVELUP: "levelup",
+      GAMEOVER: "gameover",
+      PAUSED: "paused"
+    };
+
+    let gameState = GAME_STATE.START;
+
+    const keys = { w: false, a: false, s: false, d: false };
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "w" || e.key === "W") keys.w = true;
+      if (e.key === "a" || e.key === "A") keys.a = true;
+      if (e.key === "s" || e.key === "S") keys.s = true;
+      if (e.key === "d" || e.key === "D") keys.d = true;
+
+      if (e.key === "p" || e.key === "P") {
+        if (gameState === GAME_STATE.PLAYING) {
+          gameState = GAME_STATE.PAUSED;
+        } else if (gameState === GAME_STATE.PAUSED) {
+          gameState = GAME_STATE.PLAYING;
+          lastTime = performance.now();
+          requestAnimationFrame(gameLoop);
+        }
+      }
+    });
+    window.addEventListener("keyup", (e) => {
+      if (e.key === "w" || e.key === "W") keys.w = false;
+      if (e.key === "a" || e.key === "A") keys.a = false;
+      if (e.key === "s" || e.key === "S") keys.s = false;
+      if (e.key === "d" || e.key === "D") keys.d = false;
+    });
+
+    // ========= ENTİTİLER =========
+    const player = {
+      x: 0,
+      y: 0,
+      radius: 14,
+      speed: 220,
+      maxHp: 100,
+      hp: 100,
+      regen: 0,
+      damage: 25,
+      fireRate: 2.4, // saniye başına mermi
+      bulletSpeed: 420,
+      bulletSize: 5,
+      bulletPierce: 0,
+      pickupRadius: 60
+    };
+
+    const bullets = [];
+    const enemies = [];
+    const xpOrbs = [];
+
+    let enemySpawnTimer = 0;
+    let enemySpawnInterval = 1.4;
+    let timeElapsed = 0;
+    let killCount = 0;
+
+    let bulletCooldown = 0;
+
+    let level = 1;
+    let xp = 0;
+    let xpNeeded = 10;
+
+    const hudHp = document.getElementById("hud-hp");
+    const hudLevel = document.getElementById("hud-level");
+    const hudKills = document.getElementById("hud-kills");
+    const hudTime = document.getElementById("hud-time");
+    const hudBuild = document.getElementById("hud-build");
+    const xpFill = document.getElementById("xp-fill");
+    const xpLabel = document.getElementById("xp-label");
+
+    const startOverlay = document.getElementById("start-overlay");
+    const levelupOverlay = document.getElementById("levelup-overlay");
+    const gameoverOverlay = document.getElementById("gameover-overlay");
+    const levelupCardsContainer = document.getElementById("levelup-cards");
+
+    const statTime = document.getElementById("stat-time");
+    const statKills = document.getElementById("stat-kills");
+    const statLevel = document.getElementById("stat-level");
+
+    const btnStart = document.getElementById("btn-start");
+    const btnRestart = document.getElementById("btn-restart");
+    const btnQuit = document.getElementById("btn-quit");
+
+    btnStart.addEventListener("click", () => {
+      startOverlay.classList.remove("overlay-visible");
+      startOverlay.style.display = "none";
+      startNewGame();
+    });
+
+    btnRestart.addEventListener("click", () => {
+      gameoverOverlay.classList.remove("overlay-visible");
+      gameoverOverlay.style.display = "none";
+      startNewGame();
+    });
+
+    btnQuit.addEventListener("click", () => {
+      gameState = GAME_STATE.START;
+      gameoverOverlay.classList.remove("overlay-visible");
+      gameoverOverlay.style.display = "none";
+      startOverlay.style.display = "flex";
+      requestAnimationFrame(() => {
+        startOverlay.classList.add("overlay-visible");
+      });
+    });
+
+    // ========= UPGRADE SİSTEMİ =========
+
+    const UPGRADE_POOL = [
+      {
+        id: "dmg1",
+        title: "Hasar I",
+        desc: "+%20 mermi hasarı.",
+        apply: () => { player.damage *= 1.2; },
+        tags: ["Saldırı", "Hasar"]
+      },
+      {
+        id: "dmg2",
+        title: "Hasar II",
+        desc: "+%35 mermi hasarı.",
+        apply: () => { player.damage *= 1.35; },
+        tags: ["Saldırı", "Hasar"]
+      },
+      {
+        id: "firerate1",
+        title: "Ateş Hızı I",
+        desc: "+%20 atış hızı (daha sık mermi).",
+        apply: () => { player.fireRate *= 1.2; },
+        tags: ["Saldırı", "Hız"]
+      },
+      {
+        id: "firerate2",
+        title: "Ateş Hızı II",
+        desc: "+%35 atış hızı.",
+        apply: () => { player.fireRate *= 1.35; },
+        tags: ["Saldırı", "Hız"]
+      },
+      {
+        id: "movespeed1",
+        title: "Hareket I",
+        desc: "+%20 hareket hızı.",
+        apply: () => { player.speed *= 1.2; },
+        tags: ["Savunma", "Hareket"]
+      },
+      {
+        id: "hp1",
+        title: "Dayanıklılık I",
+        desc: "Maksimum HP +20, mevcut HP yenilenir.",
+        apply: () => { player.maxHp += 20; player.hp = Math.min(player.hp + 20, player.maxHp); },
+        tags: ["Savunma", "HP"]
+      },
+      {
+        id: "regen1",
+        title: "Rejen I",
+        desc: "Her saniye +1 pasif can yenilenmesi.",
+        apply: () => { player.regen += 1; },
+        tags: ["Savunma", "Rejen"]
+      },
+      {
+        id: "pickup1",
+        title: "Manyetik Alan",
+        desc: "XP çekim alanı +%60.",
+        apply: () => { player.pickupRadius *= 1.6; },
+        tags: ["Kalite", "XP"]
+      },
+      {
+        id: "bulletSpeed",
+        title: "Mermi Hızı",
+        desc: "Mermi hızı +%40, daha uzağa daha hızlı.",
+        apply: () => { player.bulletSpeed *= 1.4; },
+        tags: ["Saldırı", "Kontrol"]
+      },
+      {
+        id: "pierce",
+        title: "Delici Mermi",
+        desc: "Mermiler +1 düşman daha delip geçebilir.",
+        apply: () => { player.bulletPierce += 1; },
+        tags: ["Saldırı", "AOE"]
+      }
+    ];
+
+    function getRandomUpgrades(count) {
+      const pool = [...UPGRADE_POOL];
+      const result = [];
+      while (result.length < count && pool.length > 0) {
+        const idx = Math.floor(Math.random() * pool.length);
+        result.push(pool.splice(idx, 1)[0]);
+      }
+      return result;
+    }
+
+    function showLevelup() {
+      if (gameState !== GAME_STATE.PLAYING) return;
+      gameState = GAME_STATE.LEVELUP;
+      levelupCardsContainer.innerHTML = "";
+
+      const choices = getRandomUpgrades(3);
+      choices.forEach(up => {
+        const card = document.createElement("div");
+        card.className = "upgrade-card";
+        card.innerHTML = `
+          <div class="upgrade-title">${up.title}</div>
+          <div class="upgrade-badge-row">
+            ${up.tags
+              .map(t => `<span class="badge"><span class="badge-dot"></span>${t}</span>`)
+              .join("")}
+          </div>
+          <div class="upgrade-desc">${up.desc}</div>
+        `;
+        card.addEventListener("click", () => {
+          up.apply();
+          levelupOverlay.classList.remove("overlay-visible");
+          levelupOverlay.style.display = "none";
+          gameState = GAME_STATE.PLAYING;
+          lastTime = performance.now();
+          requestAnimationFrame(gameLoop);
+        });
+        levelupCardsContainer.appendChild(card);
+      });
+
+      levelupOverlay.style.display = "flex";
+      requestAnimationFrame(() => {
+        levelupOverlay.classList.add("overlay-visible");
+      });
+    }
+
+    // ========= YARDIMCI FONKSİYONLAR =========
+
+    function clamp(v, min, max) {
+      return v < min ? min : v > max ? max : v;
+    }
+
+    function length(x, y) {
+      return Math.sqrt(x * x + y * y);
+    }
+
+    function normalize(x, y) {
+      const len = Math.sqrt(x * x + y * y) || 1;
+      return { x: x / len, y: y / len };
+    }
+
+    function formatTime(t) {
+      const total = Math.floor(t);
+      const m = Math.floor(total / 60);
+      const s = total % 60;
+      return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+    }
+
+    function rectCenter() {
+      const rect = canvas.getBoundingClientRect();
+      return { x: rect.width / 2, y: rect.height / 2 };
+    }
+
+    // ========= OYUN BAŞLATMA / SIFIRLAMA =========
+
+    function resetGameState() {
+      const center = rectCenter();
+      player.x = center.x;
+      player.y = center.y;
+      player.radius = 14;
+      player.speed = 220;
+      player.maxHp = 100;
+      player.hp = 100;
+      player.regen = 0;
+      player.damage = 25;
+      player.fireRate = 2.4;
+      player.bulletSpeed = 420;
+      player.bulletSize = 5;
+      player.bulletPierce = 0;
+      player.pickupRadius = 60;
+
+      bullets.length = 0;
+      enemies.length = 0;
+      xpOrbs.length = 0;
+      enemySpawnTimer = 0;
+      enemySpawnInterval = 1.4;
+      timeElapsed = 0;
+      killCount = 0;
+      bulletCooldown = 0;
+      level = 1;
+      xp = 0;
+      xpNeeded = 10;
+      hudBuild.textContent = "Balanced";
+    }
+
+    function startNewGame() {
+      resetGameState();
+      gameState = GAME_STATE.PLAYING;
+      lastTime = performance.now();
+      requestAnimationFrame(gameLoop);
+    }
+
+    function onGameOver() {
+      gameState = GAME_STATE.GAMEOVER;
+      statTime.textContent = formatTime(timeElapsed);
+      statKills.textContent = killCount.toString();
+      statLevel.textContent = level.toString();
+
+      gameoverOverlay.style.display = "flex";
+      requestAnimationFrame(() => {
+        gameoverOverlay.classList.add("overlay-visible");
+      });
+    }
+
+    // ========= ENEMY SPAWN =========
+
+    function spawnEnemy() {
+      const rect = canvas.getBoundingClientRect();
+      const margin = 60;
+      const side = Math.floor(Math.random() * 4);
+      let x, y;
+      if (side === 0) {
+        x = Math.random() * rect.width;
+        y = -margin;
+      } else if (side === 1) {
+        x = Math.random() * rect.width;
+        y = rect.height + margin;
+      } else if (side === 2) {
+        x = -margin;
+        y = Math.random() * rect.height;
+      } else {
+        x = rect.width + margin;
+        y = Math.random() * rect.height;
+      }
+
+      // Zaman ilerledikçe düşman buff
+      const difficulty = 1 + timeElapsed / 60;
+      const baseSpeed = 60 + Math.random() * 40;
+      const baseHp = 35 + Math.random() * 15;
+
+      enemies.push({
+        x,
+        y,
+        radius: 14,
+        speed: baseSpeed * difficulty,
+        hp: baseHp * difficulty,
+        maxHp: baseHp * difficulty,
+        damage: 10 * difficulty,
+        knockback: 200
+      });
+    }
+
+    // ========= GÜNCELLEME =========
+
+    function updatePlayer(dt) {
+      let dx = 0;
+      let dy = 0;
+      if (keys.w) dy -= 1;
+      if (keys.s) dy += 1;
+      if (keys.a) dx -= 1;
+      if (keys.d) dx += 1;
+      if (dx !== 0 || dy !== 0) {
+        const n = normalize(dx, dy);
+        player.x += n.x * player.speed * dt;
+        player.y += n.y * player.speed * dt;
+      }
+
+      const rect = canvas.getBoundingClientRect();
+      player.x = clamp(player.x, 40, rect.width - 40);
+      player.y = clamp(player.y, 40, rect.height - 40);
+
+      // Rejen
+      if (player.regen > 0) {
+        player.hp = clamp(player.hp + player.regen * dt, 0, player.maxHp);
+      }
+    }
+
+    function updateEnemies(dt) {
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const e = enemies[i];
+        const dir = normalize(player.x - e.x, player.y - e.y);
+        e.x += dir.x * e.speed * dt;
+        e.y += dir.y * e.speed * dt;
+
+        // Player çarpışma
+        const dist = length(player.x - e.x, player.y - e.y);
+        if (dist < player.radius + e.radius) {
+          player.hp -= e.damage * dt; // saniye başına hasar
+          // hafif itme
+          const push = normalize(player.x - e.x, player.y - e.y);
+          player.x += push.x * e.knockback * dt * 0.2;
+          player.y += push.y * e.knockback * dt * 0.2;
+
+          if (player.hp <= 0) {
+            player.hp = 0;
+            onGameOver();
+            return;
+          }
+        }
+
+        if (e.hp <= 0) {
+          // XP orb
+          xpOrbs.push({
+            x: e.x,
+            y: e.y,
+            radius: 6,
+            value: 1 + Math.random() * 1
+          });
+          enemies.splice(i, 1);
+          killCount++;
+        }
+      }
+    }
+
+    function updateBullets(dt) {
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        b.x += b.vx * dt;
+        b.y += b.vy * dt;
+
+        const rect = canvas.getBoundingClientRect();
+        if (
+          b.x < -40 || b.x > rect.width + 40 ||
+          b.y < -40 || b.y > rect.height + 40 ||
+          b.life <= 0
+        ) {
+          bullets.splice(i, 1);
+          continue;
+        }
+
+        b.life -= dt;
+
+        // Düşman çarpışma
+        for (let j = enemies.length - 1; j >= 0; j--) {
+          const e = enemies[j];
+          const dist = length(e.x - b.x, e.y - b.y);
+          if (dist < e.radius + b.radius) {
+            e.hp -= player.damage;
+            b.pierced++;
+
+            if (b.pierced > player.bulletPierce) {
+              bullets.splice(i, 1);
+            }
+
+            if (e.hp <= 0) {
+              xpOrbs.push({
+                x: e.x,
+                y: e.y,
+                radius: 6,
+                value: 1 + Math.random() * 1
+              });
+              enemies.splice(j, 1);
+              killCount++;
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    function updateXpOrbs(dt) {
+      for (let i = xpOrbs.length - 1; i >= 0; i--) {
+        const orb = xpOrbs[i];
+        const dist = length(player.x - orb.x, player.y - orb.y);
+        if (dist < player.pickupRadius) {
+          const dir = normalize(player.x - orb.x, player.y - orb.y);
+          const strength = 250 * (1 - dist / player.pickupRadius);
+          orb.x += dir.x * strength * dt;
+          orb.y += dir.y * strength * dt;
+        }
+
+        if (dist < player.radius + orb.radius + 2) {
+          xp += orb.value;
+          xpOrbs.splice(i, 1);
+
+          if (xp >= xpNeeded) {
+            level++;
+            xp -= xpNeeded;
+            xpNeeded = Math.floor(10 + level * level * 1.5);
+            enemySpawnInterval = Math.max(0.35, enemySpawnInterval - 0.05);
+            showLevelup();
+          }
+        }
+      }
+    }
+
+    function autoShoot(dt) {
+      bulletCooldown -= dt;
+      if (bulletCooldown > 0) return;
+      if (enemies.length === 0) return;
+
+      // En yakın düşmanı bul
+      let nearest = null;
+      let bestDist = Infinity;
+      for (const e of enemies) {
+        const d = length(e.x - player.x, e.y - player.y);
+        if (d < bestDist) {
+          bestDist = d;
+          nearest = e;
+        }
+      }
+
+      if (!nearest) return;
+      const dir = normalize(nearest.x - player.x, nearest.y - player.y);
+
+      const bullet = {
+        x: player.x,
+        y: player.y,
+        radius: player.bulletSize,
+        vx: dir.x * player.bulletSpeed,
+        vy: dir.y * player.bulletSpeed,
+        life: 1.2,
+        pierced: 0
+      };
+      bullets.push(bullet);
+
+      bulletCooldown = 1 / player.fireRate;
+    }
+
+    function updateHud() {
+      hudHp.textContent = `${Math.round(player.hp)} / ${player.maxHp}`;
+      hudLevel.textContent = level.toString();
+      hudKills.textContent = killCount.toString();
+      hudTime.textContent = formatTime(timeElapsed);
+      xpFill.style.width = `${clamp((xp / xpNeeded) * 100, 0, 100)}%`;
+      xpLabel.textContent = `XP ${Math.floor(xp)} / ${xpNeeded}`;
+    }
+
+    // ========= ÇİZİM =========
+
+    function drawBackground() {
+      const rect = canvas.getBoundingClientRect();
+      // hafif grid
+      ctx.save();
+      ctx.fillStyle = "#020617";
+      ctx.fillRect(0, 0, rect.width, rect.height);
+
+      ctx.globalAlpha = 0.18;
+      ctx.strokeStyle = "#0f172a";
+      const step = 60;
+      for (let x = 0; x < rect.width; x += step) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, rect.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y < rect.height; y += step) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(rect.width, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // parlayan merkez
+      const center = rectCenter();
+      const grad = ctx.createRadialGradient(
+        center.x,
+        center.y,
+        0,
+        center.x,
+        center.y,
+        rect.width * 0.6
+      );
+      grad.addColorStop(0, "rgba(56,189,248,0.12)");
+      grad.addColorStop(0.4, "rgba(15,23,42,0)");
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, rect.width, rect.height);
+    }
+
+    function drawPlayer() {
+      ctx.save();
+      ctx.translate(player.x, player.y);
+
+      // dış halo
+      const haloGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, player.radius * 2.4);
+      haloGrad.addColorStop(0, "rgba(56,189,248,0.4)");
+      haloGrad.addColorStop(1, "rgba(56,189,248,0)");
+      ctx.fillStyle = haloGrad;
+      ctx.beginPath();
+      ctx.arc(0, 0, player.radius * 2.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // gövde
+      const grad = ctx.createRadialGradient(0, -4, 4, 0, 4, player.radius + 2);
+      grad.addColorStop(0, "#f9fafb");
+      grad.addColorStop(0.4, "#38bdf8");
+      grad.addColorStop(1, "#0f172a");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // yön oku (en yakın düşmana bak)
+      if (enemies.length > 0) {
+        let nearest = enemies[0];
+        let bestDist = length(nearest.x - player.x, nearest.y - player.y);
+        for (const e of enemies) {
+          const d = length(e.x - player.x, e.y - player.y);
+          if (d < bestDist) {
+            bestDist = d;
+            nearest = e;
+          }
+        }
+        const dir = normalize(nearest.x - player.x, nearest.y - player.y);
+        ctx.save();
+        ctx.rotate(Math.atan2(dir.y, dir.x));
+        ctx.fillStyle = "#fef9c3";
+        ctx.beginPath();
+        ctx.moveTo(player.radius - 2, 0);
+        ctx.lineTo(player.radius + 10, 4);
+        ctx.lineTo(player.radius + 10, -4);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
+
+    function drawEnemies() {
+      ctx.save();
+      for (const e of enemies) {
+        // gölge
+        ctx.globalAlpha = 0.25;
+        ctx.fillStyle = "#000";
+        ctx.beginPath();
+        ctx.ellipse(e.x + 4, e.y + e.radius, e.radius * 0.8, e.radius * 0.4, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+
+        const grad = ctx.createRadialGradient(e.x - 4, e.y - 4, 4, e.x, e.y, e.radius + 4);
+        grad.addColorStop(0, "#fee2e2");
+        grad.addColorStop(0.4, "#f97316");
+        grad.addColorStop(1, "#111827");
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // HP bar
+        const ratio = clamp(e.hp / e.maxHp, 0, 1);
+        const barW = e.radius * 1.6;
+        const barH = 4;
+        ctx.fillStyle = "rgba(15,23,42,0.9)";
+        ctx.fillRect(e.x - barW / 2, e.y - e.radius - 8, barW, barH);
+        ctx.fillStyle = "#22c55e";
+        ctx.fillRect(e.x - barW / 2, e.y - e.radius - 8, barW * ratio, barH);
+      }
+      ctx.restore();
+    }
+
+    function drawBullets() {
+      ctx.save();
+      for (const b of bullets) {
+        const grad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.radius * 2.3);
+        grad.addColorStop(0, "#fef9c3");
+        grad.addColorStop(0.3, "#eab308");
+        grad.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius * 2.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#facc15";
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawXpOrbs() {
+      ctx.save();
+      for (const orb of xpOrbs) {
+        const grad = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, orb.radius * 2.4);
+        grad.addColorStop(0, "#bbf7d0");
+        grad.addColorStop(0.4, "#22c55e");
+        grad.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(orb.x, orb.y, orb.radius * 2.4, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#4ade80";
+        ctx.beginPath();
+        ctx.arc(orb.x, orb.y, orb.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // ========= GAME LOOP =========
+
+    let lastTime = 0;
+
+    function gameLoop(timestamp) {
+      if (gameState !== GAME_STATE.PLAYING) return;
+      const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+      lastTime = timestamp;
+
+      timeElapsed += dt;
+
+      enemySpawnTimer -= dt;
+      if (enemySpawnTimer <= 0) {
+        spawnEnemy();
+        enemySpawnTimer = enemySpawnInterval;
+      }
+
+      updatePlayer(dt);
+      updateEnemies(dt);
+      updateBullets(dt);
+      updateXpOrbs(dt);
+      autoShoot(dt);
+      updateHud();
+
+      // Çizim
+      drawBackground();
+      drawXpOrbs();
+      drawEnemies();
+      drawBullets();
+      drawPlayer();
+
+      if (gameState === GAME_STATE.PLAYING) {
+        requestAnimationFrame(gameLoop);
+      }
+    }
+
+    // Başlangıçta sadece start ekranı görünür,
+    // oyun startNewGame ile başlatılınca loop tetikleniyor.
+  </script>
+</body>
+</html>
