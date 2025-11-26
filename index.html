@@ -30,35 +30,39 @@
       margin: 0;
       padding: 0;
       height: 100%;
+      width: 100%;
       background: radial-gradient(circle at top, #020617 0, #000 60%);
       color: var(--text);
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow: hidden;
     }
 
     body {
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 12px;
     }
 
+    /* GAME ROOT FULLSCREEN */
     #game-root {
-      width: 100%;
-      max-width: 1100px;
-      aspect-ratio: 16/9;
-      position: relative;
-      border-radius: 24px;
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      border-radius: 0;
       overflow: hidden;
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      box-shadow: var(--shadow-soft);
-      background: radial-gradient(circle at top, #020617 0, #000 65%);
+      border: none;
+      box-shadow: none;
+      background: radial-gradient(circle at top, #020617 0, #000 75%);
     }
 
     #game-canvas {
+      position: absolute;
+      inset: 0;
       width: 100%;
       height: 100%;
       display: block;
-      background: radial-gradient(circle at center, #020617 0, #000 75%);
+      background: radial-gradient(circle at center, #020617 0, #000 80%);
       image-rendering: pixelated;
     }
 
@@ -81,6 +85,7 @@
       justify-content: space-between;
       gap: 8px;
       pointer-events: none;
+      flex-wrap: wrap;
     }
 
     .hud-group {
@@ -117,7 +122,7 @@
       left: 50%;
       transform: translateX(-50%);
       bottom: 10px;
-      width: min(60%, 580px);
+      width: min(70%, 680px);
       background: rgba(15, 23, 42, 0.95);
       border-radius: 999px;
       border: 1px solid rgba(148, 163, 184, 0.5);
@@ -166,6 +171,7 @@
       pointer-events: none;
       font-size: 11px;
       color: var(--text-soft);
+      text-align: right;
     }
 
     /* Overlays */
@@ -184,7 +190,7 @@
     }
 
     .overlay-card {
-      min-width: min(400px, 90%);
+      min-width: min(420px, 90%);
       max-width: 520px;
       background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.08), rgba(15, 23, 42, 0.96));
       border-radius: 20px;
@@ -393,23 +399,108 @@
       margin-bottom: 3px;
     }
 
-    /* Small Screens */
+    /* MOBILE CONTROLS */
 
-    @media (max-width: 720px) {
-      #game-root {
-        border-radius: 0;
+    #mobile-controls {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    #joystick-container {
+      position: absolute;
+      left: 18px;
+      bottom: 28px;
+      width: 120px;
+      height: 120px;
+      pointer-events: auto;
+      touch-action: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #joystick-base {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      background: radial-gradient(circle at center, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.8));
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.9);
+    }
+
+    #joystick-knob {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle at top, #38bdf8, #0f172a);
+      border: 1px solid rgba(148, 163, 184, 1);
+      box-shadow: 0 10px 25px rgba(56, 189, 248, 0.9);
+      touch-action: none;
+    }
+
+    #mobile-hint {
+      position: absolute;
+      left: 18px;
+      bottom: 4px;
+      font-size: 11px;
+      color: var(--text-soft);
+      pointer-events: none;
+    }
+
+    #mobile-pause-btn {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      pointer-events: auto;
+    }
+
+    #mobile-pause-btn button {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      background: rgba(15, 23, 42, 0.95);
+      padding: 6px 10px;
+      font-size: 12px;
+      color: #e5e7eb;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      #xp-bar-wrapper {
+        width: 92%;
+        bottom: 78px; /* joystick ile çakışmasın */
       }
 
-      .overlay-card {
-        border-radius: 18px;
+      #bottom-right-hints {
+        display: none;
       }
 
       .hud-pill {
         padding: 3px 8px;
       }
+    }
 
-      #xp-bar-wrapper {
-        width: 90%;
+    @media (pointer: coarse) {
+      /* dokunmatik cihazlarda biraz daha büyük joystick */
+      #joystick-container {
+        width: 140px;
+        height: 140px;
+      }
+      #joystick-base {
+        width: 120px;
+        height: 120px;
+      }
+      #joystick-knob {
+        width: 54px;
+        height: 54px;
       }
     }
 
@@ -475,18 +566,22 @@
             <div class="start-logo-dot"></div>
             <div>
               <div class="overlay-title">Nova Arena</div>
-              <div class="start-tagline">5–10 dakikalık mini Brotato / Survivor keyfi.</div>
+              <div class="start-tagline">PC + Mobil mini survivor oyunu.</div>
             </div>
           </div>
           <p class="overlay-sub">
             Sonsuz düşman dalgalarıyla küçük bir arenada hayatta kal. Seviye atla, rastgele
-            upgrade seç, build’ini güçlendir. Ne kadar uzun dayanabilirsin?
+            upgrade seç, build’ini güçlendir. Mobilde sol alttaki joystick ile hareket edebilirsin.
           </p>
           <div class="start-controls">
-            <div><strong>Kontroller:</strong></div>
+            <div><strong>PC Kontrol:</strong></div>
             <div>• <code>W A S D</code> → Hareket</div>
             <div>• Otomatik nişan + otomatik ateş (en yakın düşman)</div>
-            <div>• Seviye alınca upgrade kartlarından birini seç</div>
+            <div>• <code>P</code> → Pause</div>
+            <br/>
+            <div><strong>Mobil Kontrol:</strong></div>
+            <div>• Sol alttaki daire → Joystick ile hareket</div>
+            <div>• Ateş yine otomatik</div>
           </div>
           <div class="overlay-actions">
             <button id="btn-start" class="btn btn-primary">▶ Oyunu Başlat</button>
@@ -534,6 +629,18 @@
         </div>
       </div>
 
+      <!-- MOBILE CONTROLS -->
+      <div id="mobile-controls">
+        <div id="mobile-pause-btn">
+          <button id="btn-mobile-pause">⏸ / ▶</button>
+        </div>
+        <div id="joystick-container">
+          <div id="joystick-base">
+            <div id="joystick-knob"></div>
+          </div>
+        </div>
+        <div id="mobile-hint">Mobil: sol alttaki joystick ile hareket</div>
+      </div>
     </div>
   </div>
 
@@ -571,13 +678,7 @@
       if (e.key === "d" || e.key === "D") keys.d = true;
 
       if (e.key === "p" || e.key === "P") {
-        if (gameState === GAME_STATE.PLAYING) {
-          gameState = GAME_STATE.PAUSED;
-        } else if (gameState === GAME_STATE.PAUSED) {
-          gameState = GAME_STATE.PLAYING;
-          lastTime = performance.now();
-          requestAnimationFrame(gameLoop);
-        }
+        togglePause();
       }
     });
     window.addEventListener("keyup", (e) => {
@@ -587,11 +688,94 @@
       if (e.key === "d" || e.key === "D") keys.d = false;
     });
 
+    // ========= MOBİL JOYSTICK =========
+    const joystickBase = document.getElementById("joystick-base");
+    const joystickKnob = document.getElementById("joystick-knob");
+    const mobilePauseBtn = document.getElementById("btn-mobile-pause");
+
+    let joystickActive = false;
+    let joystickCenter = { x: 0, y: 0 };
+    let joystickVector = { x: 0, y: 0 }; // -1..1
+
+    function getRelativePos(event, element) {
+      const rect = element.getBoundingClientRect();
+      const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+      const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+      };
+    }
+
+    function startJoystick(event) {
+      event.preventDefault();
+      joystickActive = true;
+      const rect = joystickBase.getBoundingClientRect();
+      joystickCenter.x = rect.width / 2;
+      joystickCenter.y = rect.height / 2;
+      updateJoystick(event);
+    }
+
+    function moveJoystick(event) {
+      if (!joystickActive) return;
+      event.preventDefault();
+      updateJoystick(event);
+    }
+
+    function endJoystick(event) {
+      event && event.preventDefault();
+      joystickActive = false;
+      joystickVector.x = 0;
+      joystickVector.y = 0;
+      joystickKnob.style.transform = "translate(-50%, -50%)";
+    }
+
+    function updateJoystick(event) {
+      const pos = getRelativePos(event, joystickBase);
+      const dx = pos.x - joystickCenter.x;
+      const dy = pos.y - joystickCenter.y;
+      const maxDist = joystickBase.clientWidth / 2 - 10;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      let nx = dx;
+      let ny = dy;
+      if (dist > maxDist) {
+        const ratio = maxDist / dist;
+        nx *= ratio;
+        ny *= ratio;
+      }
+      joystickKnob.style.transform = `translate(${nx}px, ${ny}px) translate(-50%, -50%)`;
+
+      // normalize -1..1
+      const normX = nx / maxDist;
+      const normY = ny / maxDist;
+      joystickVector.x = normX;
+      joystickVector.y = normY;
+    }
+
+    joystickBase.addEventListener("pointerdown", startJoystick);
+    window.addEventListener("pointermove", moveJoystick);
+    window.addEventListener("pointerup", endJoystick);
+    window.addEventListener("pointercancel", endJoystick);
+
+    mobilePauseBtn.addEventListener("click", () => {
+      togglePause();
+    });
+
+    function togglePause() {
+      if (gameState === GAME_STATE.PLAYING) {
+        gameState = GAME_STATE.PAUSED;
+      } else if (gameState === GAME_STATE.PAUSED) {
+        gameState = GAME_STATE.PLAYING;
+        lastTime = performance.now();
+        requestAnimationFrame(gameLoop);
+      }
+    }
+
     // ========= ENTİTİLER =========
     const player = {
       x: 0,
       y: 0,
-      radius: 14,
+      radius: 16,
       speed: 220,
       maxHp: 100,
       hp: 100,
@@ -815,7 +999,7 @@
       const center = rectCenter();
       player.x = center.x;
       player.y = center.y;
-      player.radius = 14;
+      player.radius = 16;
       player.speed = 220;
       player.maxHp = 100;
       player.hp = 100;
@@ -839,6 +1023,10 @@
       xp = 0;
       xpNeeded = 10;
       hudBuild.textContent = "Balanced";
+
+      joystickVector.x = 0;
+      joystickVector.y = 0;
+      joystickKnob.style.transform = "translate(-50%, -50%)";
     }
 
     function startNewGame() {
@@ -889,12 +1077,13 @@
       enemies.push({
         x,
         y,
-        radius: 14,
+        radius: 16,
         speed: baseSpeed * difficulty,
         hp: baseHp * difficulty,
         maxHp: baseHp * difficulty,
         damage: 10 * difficulty,
-        knockback: 200
+        knockback: 200,
+        type: Math.floor(Math.random() * 4) // 0: daire, 1: kare, 2: üçgen, 3: altıgen
       });
     }
 
@@ -903,10 +1092,17 @@
     function updatePlayer(dt) {
       let dx = 0;
       let dy = 0;
+
+      // Keyboard
       if (keys.w) dy -= 1;
       if (keys.s) dy += 1;
       if (keys.a) dx -= 1;
       if (keys.d) dx += 1;
+
+      // Joystick (y ekseni ters)
+      dx += joystickVector.x;
+      dy += joystickVector.y;
+
       if (dx !== 0 || dy !== 0) {
         const n = normalize(dx, dy);
         player.x += n.x * player.speed * dt;
@@ -1085,7 +1281,7 @@
 
       ctx.globalAlpha = 0.18;
       ctx.strokeStyle = "#0f172a";
-      const step = 60;
+      const step = 70;
       for (let x = 0; x < rect.width; x += step) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
@@ -1108,7 +1304,7 @@
         0,
         center.x,
         center.y,
-        rect.width * 0.6
+        Math.max(rect.width, rect.height)
       );
       grad.addColorStop(0, "rgba(56,189,248,0.12)");
       grad.addColorStop(0.4, "rgba(15,23,42,0)");
@@ -1130,17 +1326,10 @@
       ctx.arc(0, 0, player.radius * 2.4, 0, Math.PI * 2);
       ctx.fill();
 
-      // gövde
-      const grad = ctx.createRadialGradient(0, -4, 4, 0, 4, player.radius + 2);
-      grad.addColorStop(0, "#f9fafb");
-      grad.addColorStop(0.4, "#38bdf8");
-      grad.addColorStop(1, "#0f172a");
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
-      ctx.fill();
-
-      // yön oku (en yakın düşmana bak)
+      // gövde - elmas / kapsül karışımı
+      ctx.save();
+      // hafif rotasyon: hareket yönüne göre
+      let angle = 0;
       if (enemies.length > 0) {
         let nearest = enemies[0];
         let bestDist = length(nearest.x - player.x, nearest.y - player.y);
@@ -1151,19 +1340,38 @@
             nearest = e;
           }
         }
-        const dir = normalize(nearest.x - player.x, nearest.y - player.y);
-        ctx.save();
-        ctx.rotate(Math.atan2(dir.y, dir.x));
-        ctx.fillStyle = "#fef9c3";
-        ctx.beginPath();
-        ctx.moveTo(player.radius - 2, 0);
-        ctx.lineTo(player.radius + 10, 4);
-        ctx.lineTo(player.radius + 10, -4);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
+        angle = Math.atan2(nearest.y - player.y, nearest.x - player.x);
       }
+      ctx.rotate(angle);
 
+      const w = player.radius * 1.6;
+      const h = player.radius * 2.2;
+
+      const grad = ctx.createLinearGradient(-w / 2, -h / 2, w / 2, h / 2);
+      grad.addColorStop(0, "#f9fafb");
+      grad.addColorStop(0.3, "#38bdf8");
+      grad.addColorStop(0.8, "#0f172a");
+      ctx.fillStyle = grad;
+
+      ctx.beginPath();
+      ctx.moveTo(0, -h / 2);
+      ctx.lineTo(w / 2, 0);
+      ctx.lineTo(0, h / 2);
+      ctx.lineTo(-w / 2, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      // iç çizgi
+      ctx.strokeStyle = "rgba(15,23,42,0.8)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, -h / 2 + 4);
+      ctx.lineTo(0, h / 2 - 4);
+      ctx.stroke();
+
+      ctx.restore();
+
+      // yön oku zaten rotasyonla birlikte hissediliyor, ekstra ok koymaya gerek yok
       ctx.restore();
     }
 
@@ -1178,14 +1386,74 @@
         ctx.fill();
         ctx.globalAlpha = 1;
 
-        const grad = ctx.createRadialGradient(e.x - 4, e.y - 4, 4, e.x, e.y, e.radius + 4);
-        grad.addColorStop(0, "#fee2e2");
-        grad.addColorStop(0.4, "#f97316");
-        grad.addColorStop(1, "#111827");
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
-        ctx.fill();
+        // farklı şekiller
+        ctx.save();
+        ctx.translate(e.x, e.y);
+
+        const r = e.radius;
+        let fillGrad;
+
+        switch (e.type) {
+          case 0: // daire - turuncu
+            fillGrad = ctx.createRadialGradient(-4, -4, 4, 0, 0, r + 4);
+            fillGrad.addColorStop(0, "#fee2e2");
+            fillGrad.addColorStop(0.4, "#f97316");
+            fillGrad.addColorStop(1, "#111827");
+            ctx.fillStyle = fillGrad;
+            ctx.beginPath();
+            ctx.arc(0, 0, r, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+          case 1: // kare - morumsu
+            fillGrad = ctx.createLinearGradient(-r, -r, r, r);
+            fillGrad.addColorStop(0, "#f5d0fe");
+            fillGrad.addColorStop(0.4, "#a855f7");
+            fillGrad.addColorStop(1, "#111827");
+            ctx.fillStyle = fillGrad;
+            ctx.beginPath();
+            const s = r * 1.2;
+            ctx.moveTo(-s, -s);
+            ctx.lineTo(s, -s);
+            ctx.lineTo(s, s);
+            ctx.lineTo(-s, s);
+            ctx.closePath();
+            ctx.fill();
+            break;
+          case 2: // üçgen - kırmızımsı
+            fillGrad = ctx.createLinearGradient(-r, -r, r, r);
+            fillGrad.addColorStop(0, "#fecaca");
+            fillGrad.addColorStop(0.4, "#ef4444");
+            fillGrad.addColorStop(1, "#111827");
+            ctx.fillStyle = fillGrad;
+            ctx.beginPath();
+            ctx.moveTo(0, -r * 1.4);
+            ctx.lineTo(r * 1.2, r * 0.9);
+            ctx.lineTo(-r * 1.2, r * 0.9);
+            ctx.closePath();
+            ctx.fill();
+            break;
+          case 3: // altıgen - yeşil
+          default:
+            fillGrad = ctx.createLinearGradient(-r, 0, r, 0);
+            fillGrad.addColorStop(0, "#bbf7d0");
+            fillGrad.addColorStop(0.4, "#22c55e");
+            fillGrad.addColorStop(1, "#111827");
+            ctx.fillStyle = fillGrad;
+            ctx.beginPath();
+            const sides = 6;
+            for (let k = 0; k < sides; k++) {
+              const ang = (Math.PI * 2 * k) / sides;
+              const px = Math.cos(ang) * r * 1.1;
+              const py = Math.sin(ang) * r * 1.1;
+              if (k === 0) ctx.moveTo(px, py);
+              else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            ctx.fill();
+            break;
+        }
+
+        ctx.restore();
 
         // HP bar
         const ratio = clamp(e.hp / e.maxHp, 0, 1);
@@ -1275,8 +1543,7 @@
       }
     }
 
-    // Başlangıçta sadece start ekranı görünür,
-    // oyun startNewGame ile başlatılınca loop tetikleniyor.
+    // başlangıçta sadece start ekranı
   </script>
 </body>
 </html>
